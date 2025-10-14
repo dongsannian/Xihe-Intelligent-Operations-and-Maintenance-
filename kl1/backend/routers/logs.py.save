@@ -1,0 +1,47 @@
+from fastapi import APIRouter, Depends, Query, Path, HTTPException
+from sqlalchemy.orm import Session
+from typing import List, Optional
+from datetime import datetime
+from pydantic import BaseModel
+from database import get_db
+from models import LogEntry, LogLevel
+from sqlalchemy import and_
+
+router = APIRouter()
+
+# Pydantic模型：日志条目
+class LogEntryBase(BaseModel):
+    source: str
+    level: LogLevel
+    message: str
+    module: Optional[str] = None
+    line_number: Optional[int] = None
+    extra: Opone
+
+class LogEntryCreate(LogEntryBase):
+    pass
+
+class LogEntryResponse(LogEntryBase):
+    id: int
+    timestamp: datetime
+    
+    class Config:
+        orm_mode = True
+
+# 获取日志列表（支持分页和筛选）
+@router.get("/", response_model=List[LogEntryResponse])
+def get_logs(
+    db: Session = Depends(get_db),
+    skip: int = Query(0, ge=0, description="跳过的记录数"),
+    limit: int = Query(1
+@router.delete("/{log_id}", status_code=204)
+def delete_log(
+    log_id: int = Path(..., ge=1, description="日志ID"),
+    db: Session = Depends(get_db)
+):
+    log = db.query(LogEntry).filter(LogEntry.id == log_id).first()
+    if not log:
+        raise HTTPException(status_code=404, detail="日志不存在")
+    db.delete(log)
+    db.commit()
+    return None
